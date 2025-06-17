@@ -1,0 +1,88 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(corrplot)
+library(caret)
+```
+
+```{r}
+data=read.csv('forestfires.csv')
+print(data)
+```
+
+## EDA
+
+```{r}
+sum(is.na(data))
+```
+
+```{r}
+summary(data)
+```
+
+```{r}
+plot(Y~X, data=data)
+```
+
+```{r}
+data_num=data%>%select(where(is.numeric))
+```
+
+```{r}
+corrplot(cor(data_num), method = 'number', type='upper', tl.col = 'black', number.cex = 0.8)
+```
+
+## Data Split
+
+```{r}
+set.seed(123)
+trainIndex=createDataPartition(data$Y, p = 0.8, list = FALSE)
+trainData=data[trainIndex, ]
+testData=data[-trainIndex, ]
+```
+
+## Regresi Linier
+
+```{r}
+lin_model=lm(Y~X, data=trainData)
+summary(lin_model)
+```
+
+## Regsesi Polinomial
+
+```{r}
+poly_model=lm(Y~X+I(X^2)+I(X^3), data=trainData)
+summary(poly_model)
+```
+
+## Evaluasi Model
+
+```{r}
+glance(lin_model)
+glance(poly_model)
+```
+
+## Prediksi
+
+```{r}
+lin_pred=data.frame(x=testData$X, y=predict(lin_model, newdata=testData))
+poly_pred=data.frame(x=testData$X, y=predict(poly_model, newdata=testData))
+```
+
+## Plot Data Test
+
+```{r}
+ggplot(data, aes(x = X, y = Y)) +
+  geom_point(color = "black", size = 2) +
+  geom_line(data = lin_pred, aes(x = x, y = y), color = "red", size = 1, linetype = "dashed") +
+  geom_line(data = poly_pred, aes(x = x, y = y), color = "blue", size = 1) +
+  labs(title = "Perbandingan Regresi Linier vs Polinomial",
+       x = "X-Axis", y = "Y-Axis",
+       caption = "Merah: Linier, Biru: Polinomial") +
+  theme_minimal()
+```
